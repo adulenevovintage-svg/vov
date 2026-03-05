@@ -16,7 +16,6 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
-import logo from './assets/logo.jpg';
 import { TEAM, SERVICES, PRICING, PORTFOLIO } from './types.ts';
 
 const IconMap: Record<string, React.ElementType> = {
@@ -55,12 +54,11 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <div className="w-12 h-12 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
                 <img 
-                  src={logo} 
+                  src="/logo.jpg" 
                   alt="Novyra Logo" 
                   className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
                 />
               </div>
               <span className="text-2xl font-display font-bold tracking-tighter text-novyra-purple">NOVYRA</span>
@@ -476,12 +474,11 @@ export default function App() {
           <div className="grid md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-2">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 overflow-hidden rounded-xl border border-white/10">
+                <div className="w-12 h-12 overflow-hidden rounded-xl border border-white/10 bg-white/5">
                   <img 
-                    src={logo} 
+                    src="/logo.jpg" 
                     alt="Novyra Logo" 
                     className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
                   />
                 </div>
                 <span className="text-2xl font-display font-bold tracking-tighter">NOVYRA</span>
