@@ -44,6 +44,7 @@ export default function App() {
   const [selectedPackage, setSelectedPackage] = React.useState<PricingPackage | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
   const [paymentLoading, setPaymentLoading] = React.useState(false);
+  const [paymentStep, setPaymentStep] = React.useState<'select' | 'bank'>('select');
 
   const supabase = getSupabase();
 
@@ -670,7 +671,10 @@ export default function App() {
                   <p className="text-zinc-500 text-sm mt-1">{selectedPackage.name}</p>
                 </div>
                 <button 
-                  onClick={() => setIsPaymentModalOpen(false)}
+                  onClick={() => {
+                    setIsPaymentModalOpen(false);
+                    setPaymentStep('select');
+                  }}
                   className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
                 >
                   <X className="w-6 h-6 text-zinc-400" />
@@ -684,34 +688,92 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2">Secure Checkout via Chapa</p>
-                
-                <button 
-                  onClick={() => handlePayment()}
-                  disabled={paymentLoading}
-                  className="w-full flex items-center justify-between p-6 rounded-2xl border-2 border-novyra-orange bg-novyra-orange/5 hover:bg-novyra-orange/10 transition-all group disabled:opacity-50"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white dark:bg-zinc-800 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                      <CreditCard className="w-6 h-6 text-novyra-orange" />
+              {paymentStep === 'select' ? (
+                <div className="space-y-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2">Select Payment Method</p>
+                  
+                  <button 
+                    onClick={() => handlePayment()}
+                    disabled={paymentLoading}
+                    className="w-full flex items-center justify-between p-6 rounded-2xl border-2 border-novyra-orange bg-novyra-orange/5 hover:bg-novyra-orange/10 transition-all group disabled:opacity-50"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white dark:bg-zinc-800 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <CreditCard className="w-6 h-6 text-novyra-orange" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-zinc-900 dark:text-white">Digital Payment</p>
+                        <p className="text-xs text-zinc-500">Telebirr, M-Pesa, Cards (via Chapa)</p>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <p className="font-bold text-zinc-900 dark:text-white">Pay Now</p>
-                      <p className="text-xs text-zinc-500">Telebirr, M-Pesa, Cards & More</p>
+                    {paymentLoading ? <Loader2 className="w-5 h-5 animate-spin text-novyra-orange" /> : <ArrowRight className="w-5 h-5 text-novyra-orange" />}
+                  </button>
+
+                  <button 
+                    onClick={() => setPaymentStep('bank')}
+                    className="w-full flex items-center justify-between p-6 rounded-2xl border-2 border-zinc-100 dark:border-zinc-800 hover:border-novyra-purple dark:hover:border-novyra-purple transition-all group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-zinc-50 dark:bg-zinc-800 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <Smartphone className="w-6 h-6 text-novyra-purple" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-zinc-900 dark:text-white">Bank Transfer</p>
+                        <p className="text-xs text-zinc-500">CBE, Dashen, Awash</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-zinc-300 group-hover:text-novyra-purple" />
+                  </button>
+
+                  <div className="grid grid-cols-4 gap-2 px-2">
+                    {['Telebirr', 'M-Pesa', 'Visa', 'Mastercard'].map((method) => (
+                      <div key={method} className="text-[8px] font-bold uppercase tracking-tighter text-zinc-400 text-center py-2 border border-zinc-100 dark:border-zinc-800 rounded-lg">
+                        {method}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <button 
+                      onClick={() => setPaymentStep('select')}
+                      className="text-novyra-purple font-bold text-xs uppercase tracking-widest hover:underline"
+                    >
+                      ← Back to methods
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Commercial Bank of Ethiopia (CBE)</p>
+                      <p className="text-lg font-mono font-bold text-zinc-900 dark:text-white">1000123456789</p>
+                      <p className="text-xs text-zinc-500">Account Name: Novyra Digital Agency</p>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Dashen Bank</p>
+                      <p className="text-lg font-mono font-bold text-zinc-900 dark:text-white">50987654321</p>
+                      <p className="text-xs text-zinc-500">Account Name: Novyra Digital Agency</p>
                     </div>
                   </div>
-                  {paymentLoading ? <Loader2 className="w-5 h-5 animate-spin text-novyra-orange" /> : <ArrowRight className="w-5 h-5 text-novyra-orange" />}
-                </button>
 
-                <div className="grid grid-cols-4 gap-2 px-2">
-                  {['Telebirr', 'M-Pesa', 'Visa', 'Mastercard'].map((method) => (
-                    <div key={method} className="text-[8px] font-bold uppercase tracking-tighter text-zinc-400 text-center py-2 border border-zinc-100 dark:border-zinc-800 rounded-lg">
-                      {method}
-                    </div>
-                  ))}
+                  <div className="p-4 rounded-xl bg-novyra-purple/5 border border-novyra-purple/20">
+                    <p className="text-xs text-novyra-purple font-medium leading-relaxed">
+                      After transfer, please send a screenshot of the receipt to our WhatsApp or Telegram with your email address.
+                    </p>
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      window.open('https://t.me/your_telegram_handle', '_blank');
+                    }}
+                    className="w-full py-4 bg-novyra-purple text-white rounded-xl font-bold hover:bg-novyra-orange transition-colors"
+                  >
+                    Confirm on Telegram
+                  </button>
                 </div>
-              </div>
+              )}
 
               <div className="mt-8 flex items-center justify-center gap-2 text-zinc-400">
                 <ShieldCheck className="w-4 h-4" />
