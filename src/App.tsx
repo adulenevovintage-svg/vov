@@ -766,7 +766,7 @@ export default function App() {
 
                   <button 
                     onClick={() => {
-                      window.open('https://t.me/your_telegram_handle', '_blank');
+                      window.open('https://t.me/+Sy8qWvhzfY9iYTRk', '_blank');
                     }}
                     className="w-full py-4 bg-novyra-purple text-white rounded-xl font-bold hover:bg-novyra-orange transition-colors"
                   >
