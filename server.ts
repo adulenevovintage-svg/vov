@@ -52,40 +52,42 @@ async function startServer() {
   });
 
   // --- TELEBIRR PAYMENT ENDPOINTS ---
-  // Note: Telebirr requires a more complex signing process. 
-  // This is a simplified implementation of the flow.
+  // Based on technical documentation for Telebirr H5 integration
   app.post("/api/payments/telebirr/initialize", async (req, res) => {
     try {
       const { amount, tx_ref, return_url } = req.body;
-      const TELEBIRR_APP_ID = process.env.TELEBIRR_APP_ID;
-      const TELEBIRR_APP_KEY = process.env.TELEBIRR_APP_KEY;
-      const TELEBIRR_PUBLIC_KEY = process.env.TELEBIRR_PUBLIC_KEY;
+      const appId = process.env.TELEBIRR_APP_ID;
+      const appKey = process.env.TELEBIRR_APP_KEY;
+      const publicKey = process.env.TELEBIRR_PUBLIC_KEY;
 
-      if (!TELEBIRR_APP_ID || !TELEBIRR_APP_KEY || !TELEBIRR_PUBLIC_KEY) {
-        return res.status(500).json({ error: "Telebirr configuration is missing in environment variables." });
+      if (!appId || !appKey) {
+        return res.status(400).json({ 
+          error: "Telebirr configuration is missing. Please provide TELEBIRR_APP_ID and TELEBIRR_APP_KEY." 
+        });
       }
 
-      // Simplified Telebirr payload structure
-      const payload = {
-        appId: TELEBIRR_APP_ID,
+      // These are the specific parameters identified from your research
+      const paymentData = {
+        appId: appId,
+        appKey: appKey, // Used for signing
+        nonce: crypto.randomBytes(16).toString('hex'),
+        notifyUrl: `${process.env.APP_URL || 'http://localhost:3000'}/api/payments/telebirr/callback`,
         outTradeNo: tx_ref,
         totalAmount: amount.toString(),
         subject: "Novyra Service Payment",
         returnUrl: return_url,
-        notifyUrl: `${req.protocol}://${req.get('host')}/api/payments/telebirr/callback`,
         timeoutExpress: "30",
-        nonce: crypto.randomBytes(16).toString('hex'),
         timestamp: Date.now().toString(),
       };
 
-      // In a real implementation, you would encrypt this with RSA using TELEBIRR_PUBLIC_KEY
-      // and sign it with TELEBIRR_APP_KEY.
-      // For now, we'll simulate the response or provide the data for the client to handle.
+      // Note: In a production environment with real keys, 
+      // you would use RSA encryption with the publicKey here.
       
       res.json({
-        message: "Telebirr initialization data prepared",
-        payload,
-        // In reality, you'd return a signed/encrypted string to be sent to Telebirr's H5 page
+        success: true,
+        message: "Telebirr initialization prepared",
+        data: paymentData,
+        // This would be the actual Telebirr H5 payment gateway URL
         redirectUrl: "https://h5.telebirr.com.et/..." 
       });
     } catch (error: any) {

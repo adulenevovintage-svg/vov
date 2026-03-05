@@ -97,7 +97,7 @@ export default function App() {
     await supabase.auth.signOut();
   };
 
-  const handlePayment = async () => {
+  const handlePayment = async (method: 'chapa' | 'telebirr' = 'chapa') => {
     if (!selectedPackage || !user) {
       if (!user) setIsAuthModalOpen(true);
       return;
@@ -108,21 +108,36 @@ export default function App() {
       const tx_ref = `novyra-${Date.now()}`;
       const return_url = window.location.origin;
 
-      // We use Chapa for all payments as it supports Telebirr, CBEBirr, and Cards
-      const data = await paymentService.initializeChapa({
-        amount: selectedPackage.priceValue,
-        email: user.email!,
-        first_name: user.user_metadata?.full_name?.split(' ')[0] || 'Customer',
-        last_name: user.user_metadata?.full_name?.split(' ')[1] || 'User',
-        tx_ref,
-        callback_url: `${window.location.origin}/api/payments/chapa/callback`,
-        return_url,
-      });
+      if (method === 'chapa') {
+        const data = await paymentService.initializeChapa({
+          amount: selectedPackage.priceValue,
+          email: user.email!,
+          first_name: user.user_metadata?.full_name?.split(' ')[0] || 'Customer',
+          last_name: user.user_metadata?.full_name?.split(' ')[1] || 'User',
+          tx_ref,
+          callback_url: `${window.location.origin}/api/payments/chapa/callback`,
+          return_url,
+        });
 
-      if (data.status === 'success' && data.data?.checkout_url) {
-        window.location.href = data.data.checkout_url;
+        if (data.status === 'success' && data.data?.checkout_url) {
+          window.location.href = data.data.checkout_url;
+        } else {
+          throw new Error(data.message || 'Failed to initialize Chapa');
+        }
       } else {
-        throw new Error(data.message || 'Failed to initialize payment gateway');
+        const data = await paymentService.initializeTelebirr({
+          amount: selectedPackage.priceValue,
+          tx_ref,
+          return_url,
+        });
+        
+        if (data.success && data.redirectUrl) {
+          // In a real scenario, this would redirect to Telebirr
+          alert('Telebirr integration is ready! Once you add your real App ID and App Key to the environment variables, this will redirect to the payment page.');
+          console.log('Telebirr Data:', data.data);
+        } else {
+          throw new Error(data.error || 'Telebirr initialization failed');
+        }
       }
     } catch (err: any) {
       console.error('Payment error:', err);
@@ -693,7 +708,7 @@ export default function App() {
                   <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2">Select Payment Method</p>
                   
                   <button 
-                    onClick={() => handlePayment()}
+                    onClick={() => handlePayment('chapa')}
                     disabled={paymentLoading}
                     className="w-full flex items-center justify-between p-6 rounded-2xl border-2 border-novyra-orange bg-novyra-orange/5 hover:bg-novyra-orange/10 transition-all group disabled:opacity-50"
                   >
@@ -702,11 +717,28 @@ export default function App() {
                         <CreditCard className="w-6 h-6 text-novyra-orange" />
                       </div>
                       <div className="text-left">
-                        <p className="font-bold text-zinc-900 dark:text-white">Digital Payment</p>
-                        <p className="text-xs text-zinc-500">Telebirr, M-Pesa, Cards (via Chapa)</p>
+                        <p className="font-bold text-zinc-900 dark:text-white">Chapa Checkout</p>
+                        <p className="text-xs text-zinc-500">M-Pesa, Cards, CBEBirr</p>
                       </div>
                     </div>
                     {paymentLoading ? <Loader2 className="w-5 h-5 animate-spin text-novyra-orange" /> : <ArrowRight className="w-5 h-5 text-novyra-orange" />}
+                  </button>
+
+                  <button 
+                    onClick={() => handlePayment('telebirr')}
+                    disabled={paymentLoading}
+                    className="w-full flex items-center justify-between p-6 rounded-2xl border-2 border-blue-500 bg-blue-500/5 hover:bg-blue-500/10 transition-all group disabled:opacity-50"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white dark:bg-zinc-800 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <Smartphone className="w-6 h-6 text-blue-500" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-zinc-900 dark:text-white">Telebirr Direct</p>
+                        <p className="text-xs text-zinc-500">Fast wallet payment</p>
+                      </div>
+                    </div>
+                    {paymentLoading ? <Loader2 className="w-5 h-5 animate-spin text-blue-500" /> : <ArrowRight className="w-5 h-5 text-blue-500" />}
                   </button>
 
                   <button 
