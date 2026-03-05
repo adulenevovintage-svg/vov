@@ -14,9 +14,15 @@ import {
   Menu,
   X,
   Sun,
-  Moon
+  Moon,
+  User,
+  LogOut
 } from 'lucide-react';
-import { TEAM, SERVICES, PRICING, PORTFOLIO } from './types.ts';
+import { TEAM, SERVICES, PRICING, PORTFOLIO, type PricingPackage } from './types.ts';
+import { getSupabase } from './lib/supabase';
+import { paymentService } from './services/paymentService';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { CreditCard, Smartphone, ShieldCheck, Loader2 } from 'lucide-react';
 
 const IconMap: Record<string, React.ElementType> = {
   Share2,
@@ -28,6 +34,103 @@ const IconMap: Record<string, React.ElementType> = {
 
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [user, setUser] = React.useState<SupabaseUser | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+  const [authMode, setAuthMode] = React.useState<'login' | 'signup'>('login');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [authLoading, setAuthLoading] = React.useState(false);
+  const [authError, setAuthError] = React.useState<string | null>(null);
+  const [selectedPackage, setSelectedPackage] = React.useState<PricingPackage | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
+  const [paymentLoading, setPaymentLoading] = React.useState(false);
+
+  const supabase = getSupabase();
+
+  React.useEffect(() => {
+    if (!supabase) return;
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+    
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      console.log(`Attempting ${authMode} for ${email}...`);
+      if (authMode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        console.log('Signup successful:', data);
+        alert('Check your email for the confirmation link!');
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        console.log('Login successful:', data);
+      }
+      setIsAuthModalOpen(false);
+    } catch (err: any) {
+      console.error('Auth error:', err);
+      setAuthError(err.message || 'An unexpected error occurred');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+  };
+
+  const handlePayment = async () => {
+    if (!selectedPackage || !user) {
+      if (!user) setIsAuthModalOpen(true);
+      return;
+    }
+
+    setPaymentLoading(true);
+    try {
+      const tx_ref = `novyra-${Date.now()}`;
+      const return_url = window.location.origin;
+
+      // We use Chapa for all payments as it supports Telebirr, CBEBirr, and Cards
+      const data = await paymentService.initializeChapa({
+        amount: selectedPackage.priceValue,
+        email: user.email!,
+        first_name: user.user_metadata?.full_name?.split(' ')[0] || 'Customer',
+        last_name: user.user_metadata?.full_name?.split(' ')[1] || 'User',
+        tx_ref,
+        callback_url: `${window.location.origin}/api/payments/chapa/callback`,
+        return_url,
+      });
+
+      if (data.status === 'success' && data.data?.checkout_url) {
+        window.location.href = data.data.checkout_url;
+      } else {
+        throw new Error(data.message || 'Failed to initialize payment gateway');
+      }
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      alert(err.message || 'Payment initialization failed. Please ensure your API keys are configured.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
   const [isDarkMode, setIsDarkMode] = React.useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('theme');
@@ -59,7 +162,7 @@ export default function App() {
                   src="/logo.jpg" 
                   alt="Novyra Logo" 
                   className="w-full h-full object-cover"
-                img/>
+                />
               </div>
               <span className="text-2xl font-display font-bold tracking-tighter text-novyra-purple">NOVYRA</span>
             </div>
@@ -70,20 +173,40 @@ export default function App() {
               <a href="#portfolio" className="text-sm font-medium hover:text-novyra-orange transition-colors dark:text-zinc-300 dark:hover:text-novyra-orange">Portfolio</a>
               <a href="#pricing" className="text-sm font-medium hover:text-novyra-orange transition-colors dark:text-zinc-300 dark:hover:text-novyra-orange">Pricing</a>
               
-              <button 
-                onClick={() => setIsDarkMode(prev => !prev)}
-                className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
-                aria-label="Toggle dark mode"
-              >
-                {isDarkMode ? <Sun size={20} className="text-novyra-orange" /> : <Moon size={20} className="text-novyra-purple" />}
-                <span className="text-xs font-bold uppercase tracking-widest hidden lg:inline-block">
-                  {isDarkMode ? 'Light' : 'Dark'}
-                </span>
-              </button>
+              <div className="flex items-center gap-4 pl-4 border-l border-zinc-200 dark:border-zinc-800">
+                <button 
+                  onClick={() => setIsDarkMode(prev => !prev)}
+                  className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                  aria-label="Toggle dark mode"
+                >
+                  {isDarkMode ? <Sun size={20} className="text-novyra-orange" /> : <Moon size={20} className="text-novyra-purple" />}
+                </button>
 
-              <button className="bg-novyra-purple text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-novyra-orange transition-all transform hover:scale-105">
-                Work With Us
-              </button>
+                {user ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-novyra-purple/10 flex items-center justify-center text-novyra-purple border border-novyra-purple/20">
+                      <User size={18} />
+                    </div>
+                    <button 
+                      onClick={handleLogout}
+                      className="p-2 rounded-full hover:bg-red-50 text-zinc-400 hover:text-red-500 transition-colors"
+                      title="Logout"
+                    >
+                      <LogOut size={20} />
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      setAuthMode('login');
+                      setIsAuthModalOpen(true);
+                    }}
+                    className="bg-novyra-purple text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-novyra-orange transition-all transform hover:scale-105"
+                  >
+                    Login
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="md:hidden flex items-center gap-4">
@@ -416,7 +539,13 @@ export default function App() {
                 <div className="pt-8 border-t border-zinc-200 dark:border-zinc-800">
                   <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">Best For</p>
                   <p className="text-sm font-medium mb-8 dark:text-zinc-300">{pkg.bestFor}</p>
-                  <button className={`w-full py-4 rounded-xl font-bold transition-all ${idx === 1 ? 'bg-novyra-orange text-white hover:bg-black dark:hover:bg-white dark:hover:text-black' : 'bg-novyra-purple text-white hover:bg-novyra-orange'}`}>
+                  <button 
+                    onClick={() => {
+                      setSelectedPackage(pkg);
+                      setIsPaymentModalOpen(true);
+                    }}
+                    className={`w-full py-4 rounded-xl font-bold transition-all ${idx === 1 ? 'bg-novyra-orange text-white hover:bg-black dark:hover:bg-white dark:hover:text-black' : 'bg-novyra-purple text-white hover:bg-novyra-orange'}`}
+                  >
                     Get Started
                   </button>
                 </div>
@@ -525,6 +654,156 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Payment Modal */}
+      {isPaymentModalOpen && selectedPackage && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-xl">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800"
+          >
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h3 className="text-2xl font-bold text-zinc-900 dark:text-white">Complete Booking</h3>
+                  <p className="text-zinc-500 text-sm mt-1">{selectedPackage.name}</p>
+                </div>
+                <button 
+                  onClick={() => setIsPaymentModalOpen(false)}
+                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6 text-zinc-400" />
+                </button>
+              </div>
+
+              <div className="bg-zinc-50 dark:bg-zinc-800/50 p-6 rounded-2xl mb-8">
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500 font-medium">Total Amount</span>
+                  <span className="text-2xl font-bold text-novyra-purple">{selectedPackage.priceValue} ETB</span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2">Secure Checkout via Chapa</p>
+                
+                <button 
+                  onClick={() => handlePayment()}
+                  disabled={paymentLoading}
+                  className="w-full flex items-center justify-between p-6 rounded-2xl border-2 border-novyra-orange bg-novyra-orange/5 hover:bg-novyra-orange/10 transition-all group disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white dark:bg-zinc-800 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                      <CreditCard className="w-6 h-6 text-novyra-orange" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-zinc-900 dark:text-white">Pay Now</p>
+                      <p className="text-xs text-zinc-500">Telebirr, M-Pesa, Cards & More</p>
+                    </div>
+                  </div>
+                  {paymentLoading ? <Loader2 className="w-5 h-5 animate-spin text-novyra-orange" /> : <ArrowRight className="w-5 h-5 text-novyra-orange" />}
+                </button>
+
+                <div className="grid grid-cols-4 gap-2 px-2">
+                  {['Telebirr', 'M-Pesa', 'Visa', 'Mastercard'].map((method) => (
+                    <div key={method} className="text-[8px] font-bold uppercase tracking-tighter text-zinc-400 text-center py-2 border border-zinc-100 dark:border-zinc-800 rounded-lg">
+                      {method}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8 flex items-center justify-center gap-2 text-zinc-400">
+                <ShieldCheck className="w-4 h-4" />
+                <span className="text-[10px] uppercase tracking-widest font-bold">Secure Encrypted Payment</span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Auth Modal */}
+      {isAuthModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800"
+          >
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-3xl font-display font-bold">
+                  {authMode === 'login' ? 'Welcome Back' : 'Join Novyra'}
+                </h2>
+                <button 
+                  onClick={() => setIsAuthModalOpen(false)}
+                  className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAuth} className="space-y-4">
+                {!supabase && (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl mb-4">
+                    <p className="text-amber-700 dark:text-amber-400 text-sm font-medium">
+                      Supabase keys are missing. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables.
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-bold uppercase tracking-widest text-zinc-500 mb-2">Email Address</label>
+                  <input 
+                    type="email" 
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-6 py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border-none focus:ring-2 focus:ring-novyra-purple transition-all"
+                    placeholder="hello@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold uppercase tracking-widest text-zinc-500 mb-2">Password</label>
+                  <input 
+                    type="password" 
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-6 py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border-none focus:ring-2 focus:ring-novyra-purple transition-all"
+                    placeholder="••••••••"
+                  />
+                </div>
+
+                {authError && (
+                  <p className="text-red-500 text-sm font-medium">{authError}</p>
+                )}
+
+                <button 
+                  type="submit"
+                  disabled={authLoading}
+                  className="w-full bg-novyra-purple text-white py-5 rounded-2xl font-bold text-lg hover:bg-novyra-orange transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                >
+                  {authLoading ? 'Processing...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
+                </button>
+              </form>
+
+              <div className="mt-8 text-center">
+                {authMode === 'login' && (
+                  <p className="text-xs text-zinc-400 mb-4 italic">
+                    Note: You must create an account (Sign Up) before you can Sign In.
+                  </p>
+                )}
+                <button 
+                  onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                  className="text-zinc-500 hover:text-novyra-purple font-medium transition-colors"
+                >
+                  {authMode === 'login' ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

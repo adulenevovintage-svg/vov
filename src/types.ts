@@ -13,6 +13,7 @@ export interface Service {
 export interface PricingPackage {
   name: string;
   price: string;
+  priceValue: number;
   features: string[];
   bestFor: string;
   color: string;
@@ -75,6 +76,7 @@ export const PRICING: PricingPackage[] = [
   {
     name: "Starter Package",
     price: "Basic Presence",
+    priceValue: 5000,
     features: [
       "12 posts per month",
       "Caption writing",
@@ -87,6 +89,7 @@ export const PRICING: PricingPackage[] = [
   {
     name: "Growth Package",
     price: "Professional Management",
+    priceValue: 12000,
     features: [
       "20 posts per month",
       "Reels/TikTok short videos",
@@ -100,6 +103,7 @@ export const PRICING: PricingPackage[] = [
   {
     name: "Premium Package",
     price: "Full Brand Control",
+    priceValue: 25000,
     features: [
       "Everything in Growth",
       "Website design or landing page",
