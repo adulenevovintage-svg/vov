@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-novyra-purple: #5D3FD3;
   --color-novyra-orange: #FF8C00;
@@ -8,18 +10,24 @@
 }
 
 @layer base {
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
   body {
-    @apply bg-white text-zinc-900 antialiased;
+    @apply bg-white text-zinc-900 antialiased transition-colors duration-300;
   }
 }
 
 .brutalist-border {
-  border: 2px solid #000;
-  box-shadow: 4px 4px 0px 0px #000;
+  border: 2px solid currentColor;
+  box-shadow: 4px 4px 0px 0px currentColor;
 }
 
 .brutalist-border-orange {
-  border: 2px solid #000;
+  border: 2px solid currentColor;
   box-shadow: 4px 4px 0px 0px var(--color-novyra-orange);
 }
 

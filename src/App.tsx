@@ -12,7 +12,9 @@ import {
   Linkedin,
   Twitter,
   Menu,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { TEAM, SERVICES, PRICING, PORTFOLIO } from './types.ts';
 
@@ -26,15 +28,33 @@ const IconMap: Record<string, React.ElementType> = {
 
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [isDarkMode, setIsDarkMode] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
+  });
+
+  React.useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
 
   return (
-    <div className="min-h-screen font-sans">
+    <div className={`min-h-screen font-sans transition-colors duration-300 ${isDarkMode ? 'dark bg-zinc-950 text-white' : 'bg-white text-zinc-900'}`}>
       {/* Navigation */}
-      <nav className="fixed w-full z-50 bg-white/80 backdrop-blur-md border-b border-zinc-200">
+      <nav className="fixed w-full z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 overflow-hidden rounded-xl border border-zinc-200">
+              <div className="w-12 h-12 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
                 <img 
                   src="/photo_2026-03-05_16-27-18.jpg" 
                   alt="Novyra Logo" 
@@ -46,16 +66,34 @@ export default function App() {
             </div>
             
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#about" className="text-sm font-medium hover:text-novyra-orange transition-colors">Who We Are</a>
-              <a href="#services" className="text-sm font-medium hover:text-novyra-orange transition-colors">Services</a>
-              <a href="#portfolio" className="text-sm font-medium hover:text-novyra-orange transition-colors">Portfolio</a>
-              <a href="#pricing" className="text-sm font-medium hover:text-novyra-orange transition-colors">Pricing</a>
+              <a href="#about" className="text-sm font-medium hover:text-novyra-orange transition-colors dark:text-zinc-300 dark:hover:text-novyra-orange">Who We Are</a>
+              <a href="#services" className="text-sm font-medium hover:text-novyra-orange transition-colors dark:text-zinc-300 dark:hover:text-novyra-orange">Services</a>
+              <a href="#portfolio" className="text-sm font-medium hover:text-novyra-orange transition-colors dark:text-zinc-300 dark:hover:text-novyra-orange">Portfolio</a>
+              <a href="#pricing" className="text-sm font-medium hover:text-novyra-orange transition-colors dark:text-zinc-300 dark:hover:text-novyra-orange">Pricing</a>
+              
+              <button 
+                onClick={() => setIsDarkMode(prev => !prev)}
+                className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                aria-label="Toggle dark mode"
+              >
+                {isDarkMode ? <Sun size={20} className="text-novyra-orange" /> : <Moon size={20} className="text-novyra-purple" />}
+                <span className="text-xs font-bold uppercase tracking-widest hidden lg:inline-block">
+                  {isDarkMode ? 'Light' : 'Dark'}
+                </span>
+              </button>
+
               <button className="bg-novyra-purple text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-novyra-orange transition-all transform hover:scale-105">
                 Work With Us
               </button>
             </div>
 
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center gap-4">
+              <button 
+                onClick={() => setIsDarkMode(prev => !prev)}
+                className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                {isDarkMode ? <Sun size={20} className="text-novyra-orange" /> : <Moon size={20} className="text-novyra-purple" />}
+              </button>
               <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
                 {isMenuOpen ? <X /> : <Menu />}
               </button>
@@ -68,12 +106,12 @@ export default function App() {
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden bg-white border-b border-zinc-200 px-4 py-6 space-y-4"
+            className="md:hidden bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-4 py-6 space-y-4"
           >
-            <a href="#about" className="block text-lg font-medium" onClick={() => setIsMenuOpen(false)}>Who We Are</a>
-            <a href="#services" className="block text-lg font-medium" onClick={() => setIsMenuOpen(false)}>Services</a>
-            <a href="#portfolio" className="block text-lg font-medium" onClick={() => setIsMenuOpen(false)}>Portfolio</a>
-            <a href="#pricing" className="block text-lg font-medium" onClick={() => setIsMenuOpen(false)}>Pricing</a>
+            <a href="#about" className="block text-lg font-medium dark:text-white" onClick={() => setIsMenuOpen(false)}>Who We Are</a>
+            <a href="#services" className="block text-lg font-medium dark:text-white" onClick={() => setIsMenuOpen(false)}>Services</a>
+            <a href="#portfolio" className="block text-lg font-medium dark:text-white" onClick={() => setIsMenuOpen(false)}>Portfolio</a>
+            <a href="#pricing" className="block text-lg font-medium dark:text-white" onClick={() => setIsMenuOpen(false)}>Pricing</a>
             <button className="w-full bg-novyra-purple text-white py-4 rounded-xl font-bold">Work With Us</button>
           </motion.div>
         )}
@@ -96,10 +134,36 @@ export default function App() {
               <span className="inline-block px-4 py-1.5 mb-6 text-xs font-bold tracking-widest uppercase bg-novyra-orange text-white rounded-full">
                 Digital Branding & Social Media Agency
               </span>
-              <h1 className="text-5xl md:text-8xl font-display font-black text-white leading-tight mb-8">
-                BUILDING BRANDS <br />
-                <span className="text-novyra-orange">DIGITALLY</span>
-              </h1>
+              <motion.h1 
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.15,
+                      delayChildren: 0.2,
+                    },
+                  },
+                }}
+                initial="hidden"
+                animate="visible"
+                className="text-5xl md:text-8xl font-display font-black text-white leading-tight mb-8"
+              >
+                {["BUILDING", "BRANDS", "DIGITALLY"].map((word, i) => (
+                  <motion.span
+                    key={i}
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className={`inline-block mr-4 ${word === "DIGITALLY" ? "text-novyra-orange" : ""}`}
+                  >
+                    {word}
+                    {i === 1 && <br className="hidden md:block" />}
+                  </motion.span>
+                ))}
+              </motion.h1>
               <p className="max-w-2xl mx-auto text-lg md:text-xl text-white/80 mb-10">
                 We help businesses grow through strategic social media management, 
                 stunning web design, and high-impact content creation.
@@ -118,7 +182,7 @@ export default function App() {
       </section>
 
       {/* Who We Are */}
-      <section id="about" className="py-24 bg-white">
+      <section id="about" className="py-24 bg-white dark:bg-zinc-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <motion.div
@@ -127,11 +191,11 @@ export default function App() {
               viewport={{ once: true }}
             >
               <h2 className="text-sm font-bold text-novyra-purple uppercase tracking-widest mb-4">Who We Are</h2>
-              <h3 className="text-4xl md:text-5xl font-display font-bold mb-6">
+              <h3 className="text-4xl md:text-5xl font-display font-bold mb-6 dark:text-white">
                 Your Full-Service <br />
                 <span className="text-novyra-orange">Digital Partner</span>
               </h3>
-              <p className="text-lg text-zinc-600 mb-8 leading-relaxed">
+              <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-8 leading-relaxed">
                 Novyra is a Full-Service Digital Branding & Social Media Agency. 
                 We don't just post; we build ecosystems that drive growth. 
                 Our mission is to bridge the gap between brands and their digital audience 
@@ -139,12 +203,12 @@ export default function App() {
               </p>
               <div className="grid grid-cols-2 gap-8">
                 <div>
-                  <h4 className="font-bold text-xl mb-2">Our Mission</h4>
-                  <p className="text-zinc-500 text-sm">Empowering brands with digital-first strategies that deliver measurable results.</p>
+                  <h4 className="font-bold text-xl mb-2 dark:text-white">Our Mission</h4>
+                  <p className="text-zinc-500 dark:text-zinc-500 text-sm">Empowering brands with digital-first strategies that deliver measurable results.</p>
                 </div>
                 <div>
-                  <h4 className="font-bold text-xl mb-2">Our Vision</h4>
-                  <p className="text-zinc-500 text-sm">To be the catalyst for the next generation of digital-native market leaders.</p>
+                  <h4 className="font-bold text-xl mb-2 dark:text-white">Our Vision</h4>
+                  <p className="text-zinc-500 dark:text-zinc-500 text-sm">To be the catalyst for the next generation of digital-native market leaders.</p>
                 </div>
               </div>
             </motion.div>
@@ -167,11 +231,11 @@ export default function App() {
       </section>
 
       {/* Services */}
-      <section id="services" className="py-24 bg-zinc-50">
+      <section id="services" className="py-24 bg-zinc-50 dark:bg-zinc-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-sm font-bold text-novyra-purple uppercase tracking-widest mb-4">Our Expertise</h2>
-            <h3 className="text-4xl md:text-5xl font-display font-bold">Services We Provide</h3>
+            <h3 className="text-4xl md:text-5xl font-display font-bold dark:text-white">Services We Provide</h3>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {SERVICES.map((service, idx) => {
@@ -183,13 +247,17 @@ export default function App() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: idx * 0.1 }}
-                  className="p-8 bg-white rounded-2xl border border-zinc-200 hover:border-novyra-purple transition-all group"
+                  className="p-8 bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200 dark:border-zinc-700 hover:border-novyra-purple transition-all group"
                 >
-                  <div className="w-14 h-14 bg-novyra-purple/10 rounded-xl flex items-center justify-center text-novyra-purple mb-6 group-hover:bg-novyra-purple group-hover:text-white transition-all">
+                  <motion.div 
+                    whileHover={{ scale: 1.1, rotate: 8 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                    className="w-14 h-14 bg-novyra-purple/10 rounded-xl flex items-center justify-center text-novyra-purple mb-6 group-hover:bg-novyra-purple group-hover:text-white transition-all cursor-pointer"
+                  >
                     <Icon size={28} />
-                  </div>
-                  <h4 className="text-xl font-bold mb-4">{service.title}</h4>
-                  <p className="text-zinc-500 leading-relaxed">{service.description}</p>
+                  </motion.div>
+                  <h4 className="text-xl font-bold mb-4 dark:text-white">{service.title}</h4>
+                  <p className="text-zinc-500 dark:text-zinc-400 leading-relaxed">{service.description}</p>
                 </motion.div>
               );
             })}
@@ -198,11 +266,11 @@ export default function App() {
       </section>
 
       {/* Team */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-white dark:bg-zinc-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-sm font-bold text-novyra-purple uppercase tracking-widest mb-4">The Experts</h2>
-            <h3 className="text-4xl md:text-5xl font-display font-bold">Meet Our Team</h3>
+            <h3 className="text-4xl md:text-5xl font-display font-bold dark:text-white">Meet Our Team</h3>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {TEAM.map((member, idx) => (
@@ -213,7 +281,7 @@ export default function App() {
                 viewport={{ once: true }}
                 className="group"
               >
-                <div className="aspect-[4/5] bg-zinc-100 rounded-3xl overflow-hidden mb-6 relative">
+                <div className="aspect-[4/5] bg-zinc-100 dark:bg-zinc-800 rounded-3xl overflow-hidden mb-6 relative">
                   <img 
                     src={`https://picsum.photos/seed/${member.name}/600/800`} 
                     alt={member.name} 
@@ -228,11 +296,11 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-                <h4 className="text-2xl font-bold mb-1">{member.name}</h4>
+                <h4 className="text-2xl font-bold mb-1 dark:text-white">{member.name}</h4>
                 <p className="text-novyra-purple font-medium mb-4">{member.role}</p>
                 <ul className="space-y-2">
                   {member.tasks.map((task, tidx) => (
-                    <li key={tidx} className="text-sm text-zinc-500 flex items-center gap-2">
+                    <li key={tidx} className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
                       <div className="w-1.5 h-1.5 bg-novyra-orange rounded-full" />
                       {task}
                     </li>
@@ -290,26 +358,26 @@ export default function App() {
       </section>
 
       {/* Process */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-white dark:bg-zinc-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-sm font-bold text-novyra-purple uppercase tracking-widest mb-4">Our Process</h2>
-            <h3 className="text-4xl md:text-5xl font-display font-bold">How We Work</h3>
+            <h3 className="text-4xl md:text-5xl font-display font-bold dark:text-white">How We Work</h3>
           </div>
           <div className="grid md:grid-cols-4 gap-8 relative">
-            <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-zinc-100 -translate-y-1/2 z-0" />
+            <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-zinc-100 dark:bg-zinc-800 -translate-y-1/2 z-0" />
             {[
               { step: "01", title: "Audit", desc: "Deep dive into your current presence." },
               { step: "02", title: "Strategy", desc: "Custom roadmap for your growth." },
               { step: "03", title: "Execution", desc: "Bringing the vision to life." },
               { step: "04", title: "Growth", desc: "Scaling and optimizing results." }
             ].map((item, idx) => (
-              <div key={idx} className="relative z-10 bg-white p-6 text-center">
+              <div key={idx} className="relative z-10 bg-white dark:bg-zinc-900 p-6 text-center rounded-2xl border border-transparent dark:border-zinc-800">
                 <div className="w-16 h-16 bg-novyra-purple text-white rounded-full flex items-center justify-center text-2xl font-black mx-auto mb-6 brutalist-border">
                   {item.step}
                 </div>
-                <h4 className="text-xl font-bold mb-2">{item.title}</h4>
-                <p className="text-zinc-500 text-sm">{item.desc}</p>
+                <h4 className="text-xl font-bold mb-2 dark:text-white">{item.title}</h4>
+                <p className="text-zinc-500 dark:text-zinc-400 text-sm">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -317,11 +385,11 @@ export default function App() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-24 bg-zinc-50">
+      <section id="pricing" className="py-24 bg-zinc-50 dark:bg-zinc-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-sm font-bold text-novyra-purple uppercase tracking-widest mb-4">Pricing</h2>
-            <h3 className="text-4xl md:text-5xl font-display font-bold">Choose Your Package</h3>
+            <h3 className="text-4xl md:text-5xl font-display font-bold dark:text-white">Choose Your Package</h3>
           </div>
           <div className="grid lg:grid-cols-3 gap-8">
             {PRICING.map((pkg, idx) => (
@@ -331,25 +399,25 @@ export default function App() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
-                className={`p-10 rounded-3xl border border-zinc-200 flex flex-col ${pkg.color} ${idx === 1 ? 'ring-2 ring-novyra-orange scale-105 z-10' : ''}`}
+                className={`p-10 rounded-3xl border border-zinc-200 dark:border-zinc-800 flex flex-col ${pkg.color} ${idx === 1 ? 'ring-2 ring-novyra-orange scale-105 z-10' : ''}`}
               >
                 {idx === 1 && (
                   <span className="bg-novyra-orange text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full w-fit mb-6">Most Popular</span>
                 )}
-                <h4 className="text-2xl font-bold mb-2">{pkg.name}</h4>
+                <h4 className="text-2xl font-bold mb-2 dark:text-white">{pkg.name}</h4>
                 <p className="text-novyra-purple font-bold text-lg mb-8">{pkg.price}</p>
                 <ul className="space-y-4 mb-10 flex-grow">
                   {pkg.features.map((feature, fidx) => (
-                    <li key={fidx} className="flex items-start gap-3 text-zinc-600">
+                    <li key={fidx} className="flex items-start gap-3 text-zinc-600 dark:text-zinc-400">
                       <CheckCircle2 className="text-novyra-orange shrink-0 mt-1" size={18} />
                       <span className="text-sm">{feature}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="pt-8 border-t border-zinc-200">
+                <div className="pt-8 border-t border-zinc-200 dark:border-zinc-800">
                   <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">Best For</p>
-                  <p className="text-sm font-medium mb-8">{pkg.bestFor}</p>
-                  <button className={`w-full py-4 rounded-xl font-bold transition-all ${idx === 1 ? 'bg-novyra-orange text-white hover:bg-black' : 'bg-novyra-purple text-white hover:bg-novyra-orange'}`}>
+                  <p className="text-sm font-medium mb-8 dark:text-zinc-300">{pkg.bestFor}</p>
+                  <button className={`w-full py-4 rounded-xl font-bold transition-all ${idx === 1 ? 'bg-novyra-orange text-white hover:bg-black dark:hover:bg-white dark:hover:text-black' : 'bg-novyra-purple text-white hover:bg-novyra-orange'}`}>
                     Get Started
                   </button>
                 </div>
@@ -360,7 +428,7 @@ export default function App() {
       </section>
 
       {/* Why Novyra */}
-      <section className="py-24 bg-novyra-purple text-white">
+      <section className="py-24 bg-novyra-purple text-white dark:bg-novyra-purple/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -385,13 +453,13 @@ export default function App() {
                 ))}
               </div>
             </div>
-            <div className="bg-white/5 p-12 rounded-3xl border border-white/10">
+            <div className="bg-white/5 p-12 rounded-3xl border border-white/10 backdrop-blur-sm">
               <h4 className="text-3xl font-display font-bold mb-6">Ready to grow?</h4>
               <p className="text-white/70 mb-10">Let's discuss how we can take your brand to the next level.</p>
               <form className="space-y-4">
-                <input type="text" placeholder="Your Name" className="w-full bg-white/10 border border-white/20 rounded-xl px-6 py-4 focus:outline-none focus:border-novyra-orange" />
-                <input type="email" placeholder="Email Address" className="w-full bg-white/10 border border-white/20 rounded-xl px-6 py-4 focus:outline-none focus:border-novyra-orange" />
-                <textarea placeholder="Tell us about your project" rows={4} className="w-full bg-white/10 border border-white/20 rounded-xl px-6 py-4 focus:outline-none focus:border-novyra-orange"></textarea>
+                <input type="text" placeholder="Your Name" className="w-full bg-white/10 border border-white/20 rounded-xl px-6 py-4 focus:outline-none focus:border-novyra-orange transition-colors" />
+                <input type="email" placeholder="Email Address" className="w-full bg-white/10 border border-white/20 rounded-xl px-6 py-4 focus:outline-none focus:border-novyra-orange transition-colors" />
+                <textarea placeholder="Tell us about your project" rows={4} className="w-full bg-white/10 border border-white/20 rounded-xl px-6 py-4 focus:outline-none focus:border-novyra-orange transition-colors"></textarea>
                 <button className="w-full bg-novyra-orange text-white py-4 rounded-xl font-bold hover:bg-white hover:text-novyra-purple transition-all">
                   Send Message
                 </button>
@@ -402,7 +470,7 @@ export default function App() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-zinc-950 text-white py-20">
+      <footer className="bg-zinc-950 text-white py-20 dark:bg-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-2">
@@ -417,7 +485,7 @@ export default function App() {
                 </div>
                 <span className="text-2xl font-display font-bold tracking-tighter">NOVYRA</span>
               </div>
-              <p className="text-zinc-500 max-w-sm mb-8">
+              <p className="text-zinc-500 dark:text-zinc-400 max-w-sm mb-8">
                 Building digital brands that matter. From social media to web development, we are your growth partner.
               </p>
               <div className="flex gap-4">
@@ -434,7 +502,7 @@ export default function App() {
             </div>
             <div>
               <h5 className="font-bold mb-6">Quick Links</h5>
-              <ul className="space-y-4 text-zinc-500 text-sm">
+              <ul className="space-y-4 text-zinc-500 dark:text-zinc-400 text-sm">
                 <li><a href="#about" className="hover:text-white transition-colors">Who We Are</a></li>
                 <li><a href="#services" className="hover:text-white transition-colors">Services</a></li>
                 <li><a href="#portfolio" className="hover:text-white transition-colors">Portfolio</a></li>
@@ -443,7 +511,7 @@ export default function App() {
             </div>
             <div>
               <h5 className="font-bold mb-6">Contact</h5>
-              <ul className="space-y-4 text-zinc-500 text-sm">
+              <ul className="space-y-4 text-zinc-500 dark:text-zinc-400 text-sm">
                 <li>hello@novyra.agency</li>
                 <li>+1 (555) 000-0000</li>
                 <li>Digital First, Global Reach</li>
@@ -451,8 +519,8 @@ export default function App() {
             </div>
           </div>
           <div className="pt-8 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-zinc-600 text-xs">© 2024 Novyra Digital Agency. All rights reserved.</p>
-            <div className="flex gap-8 text-zinc-600 text-xs">
+            <p className="text-zinc-600 dark:text-zinc-500 text-xs">© 2024 Novyra Digital Agency. All rights reserved.</p>
+            <div className="flex gap-8 text-zinc-600 dark:text-zinc-500 text-xs">
               <a href="#" className="hover:text-white">Privacy Policy</a>
               <a href="#" className="hover:text-white">Terms of Service</a>
             </div>
