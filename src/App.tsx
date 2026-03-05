@@ -59,7 +59,7 @@ export default function App() {
                   src="/logo.jpg" 
                   alt="Novyra Logo" 
                   className="w-full h-full object-cover"
-                />
+                img/>
               </div>
               <span className="text-2xl font-display font-bold tracking-tighter text-novyra-purple">NOVYRA</span>
             </div>
