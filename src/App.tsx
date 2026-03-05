@@ -16,6 +16,7 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
+import logo from './assets/logo.jpg';
 import { TEAM, SERVICES, PRICING, PORTFOLIO } from './types.ts';
 
 const IconMap: Record<string, React.ElementType> = {
@@ -56,7 +57,7 @@ export default function App() {
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
                 <img 
-                  src="/photo_2026-03-05_16-27-18.jpg" 
+                  src={logo} 
                   alt="Novyra Logo" 
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
@@ -477,7 +478,7 @@ export default function App() {
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-12 overflow-hidden rounded-xl border border-white/10">
                   <img 
-                    src="/photo_2026-03-05_16-27-18.jpg" 
+                    src={logo} 
                     alt="Novyra Logo" 
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
