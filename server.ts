@@ -51,44 +51,94 @@ async function startServer() {
     }
   });
 
+  // --- TELEBIRR SIGNING HELPER (Official RSA Method) ---
+  // This implements the RSA-SHA256 signing logic from eba-alemayehu/telebirr
+  const signTelebirrData = (data: any, privateKey: string) => {
+    try {
+      // 1. Filter out excluded fields and flatten biz_content if it exists
+      const signData: any = {};
+      const excludeFields = ["sign", "sign_type", "header", "refund_info", "openType", "raw_request"];
+      
+      Object.keys(data).forEach(key => {
+        if (!excludeFields.includes(key)) {
+          if (key === 'biz_content' && typeof data[key] === 'object') {
+            // Flatten biz_content for signing
+            Object.keys(data[key]).forEach(bizKey => {
+              signData[bizKey] = data[key][bizKey];
+            });
+          } else {
+            signData[key] = data[key];
+          }
+        }
+      });
+
+      // 2. Sort keys alphabetically
+      const sortedKeys = Object.keys(signData).sort();
+      
+      // 3. Create the string to sign: "key1=value1&key2=value2..."
+      const signString = sortedKeys
+        .map(key => `${key}=${signData[key]}`)
+        .join('&');
+      
+      // 4. Sign with RSA-SHA256
+      // Note: The privateKey must be in PEM format
+      const sign = crypto.createSign('SHA256');
+      sign.update(signString);
+      sign.end();
+      
+      return sign.sign(privateKey, 'base64');
+    } catch (error) {
+      console.error("Signing Error:", error);
+      return "";
+    }
+  };
+
   // --- TELEBIRR PAYMENT ENDPOINTS ---
-  // Based on technical documentation for Telebirr H5 integration
   app.post("/api/payments/telebirr/initialize", async (req, res) => {
     try {
       const { amount, tx_ref, return_url } = req.body;
       const appId = process.env.TELEBIRR_APP_ID;
       const appKey = process.env.TELEBIRR_APP_KEY;
-      const publicKey = process.env.TELEBIRR_PUBLIC_KEY;
+      const privateKey = process.env.TELEBIRR_PRIVATE_KEY; // Your RSA Private Key
 
-      if (!appId || !appKey) {
+      if (!appId || !appKey || !privateKey) {
         return res.status(400).json({ 
-          error: "Telebirr configuration is missing. Please provide TELEBIRR_APP_ID and TELEBIRR_APP_KEY." 
+          error: "Telebirr configuration is missing. Please provide TELEBIRR_APP_ID, TELEBIRR_APP_KEY, and TELEBIRR_PRIVATE_KEY." 
         });
       }
 
-      // These are the specific parameters identified from your research
-      const paymentData = {
-        appId: appId,
-        appKey: appKey, // Used for signing
-        nonce: crypto.randomBytes(16).toString('hex'),
-        notifyUrl: `${process.env.APP_URL || 'http://localhost:3000'}/api/payments/telebirr/callback`,
-        outTradeNo: tx_ref,
-        totalAmount: amount.toString(),
-        subject: "Novyra Service Payment",
-        returnUrl: return_url,
-        timeoutExpress: "30",
-        timestamp: Date.now().toString(),
+      const nonce = crypto.randomBytes(16).toString('hex');
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+
+      const payload: any = {
+        appid: appId,
+        merch_code: process.env.TELEBIRR_MERCHANT_CODE || "YOUR_MERCHANT_CODE",
+        nonce_str: nonce,
+        method: "payment.preorder",
+        timestamp: timestamp,
+        version: "1.0",
+        sign_type: "SHA256WithRSA",
+        biz_content: {
+          out_trade_no: tx_ref,
+          total_amount: amount.toString(),
+          subject: "Novyra Service Payment",
+          timeout_express: "30",
+          notify_url: `${process.env.APP_URL || 'http://localhost:3000'}/api/payments/telebirr/callback`,
+          return_url: return_url,
+          receive_name: "Novyra Digital",
+          short_code: process.env.TELEBIRR_SHORT_CODE || "654321",
+        }
       };
 
-      // Note: In a production environment with real keys, 
-      // you would use RSA encryption with the publicKey here.
-      
+      // Generate the signature using the official RSA method
+      payload.sign = signTelebirrData(payload, privateKey);
+
       res.json({
         success: true,
-        message: "Telebirr initialization prepared",
-        data: paymentData,
-        // This would be the actual Telebirr H5 payment gateway URL
-        redirectUrl: "https://h5.telebirr.com.et/..." 
+        message: "Telebirr Fabric API request prepared",
+        data: payload,
+        // The official Telebirr Fabric API endpoint
+        apiUrl: "https://apiaccess.telebirr.com.et/apiaccess/payment/gateway/payment/v1/merchant/preOrder"
       });
     } catch (error: any) {
       console.error("Telebirr Initialization Error:", error.message);
