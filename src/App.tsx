@@ -36,7 +36,7 @@ export default function App() {
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 overflow-hidden rounded-xl border border-zinc-200">
                 <img 
-                  src="/photo_2026-03-05_16-27-18.jpg" 
+                  src="photo_2026-03-05_16-27-18.jpg" 
                   alt="Novyra Logo" 
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
